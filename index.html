@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.2.1</title>
+<title>ModelBook Studio v0.2.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.2.1</span></div>
+  <div class="logo">MODELBOOK <span>v0.2.3</span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -180,9 +180,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
         <div class="ef" style="display:flex;align-items:center;gap:6px;">
           <label style="margin:0;"><input type="checkbox" id="iqr" onchange="up()" checked style="accent-color:var(--ac);"> Show QR code on front</label>
         </div>
-        <div class="ef" style="margin-top:4px;">
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="radio" name="qrtype" id="iqr_vcard" value="vcard" checked onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">vCard (save contact to phone)</span></label>
-          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:2px;"><input type="radio" name="qrtype" id="iqr_url" value="url" onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">Website link</span></label>
+        <div class="ef" style="margin-top:4px;display:flex;gap:10px;">
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;margin:0;"><input type="radio" name="qrtype" id="iqr_vcard" value="vcard" checked onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">vCard (save contact)</span></label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;margin:0;"><input type="radio" name="qrtype" id="iqr_url" value="url" onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">Website link</span></label>
         </div>
         <div class="ef" id="qr-url-wrap" style="margin-top:3px;display:none;">
           <label>Website URL</label>
@@ -280,7 +280,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.3</strong> — Auto-save: all designer edits persist on reload, no more lost data<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -520,6 +520,8 @@ function up(){
   }
   $('cf').innerHTML=T[cur].f(d);
   $('cb').innerHTML=T[cur].b(d);
+  // Auto-save current state to localStorage
+  localStorage.setItem('mb_autosave', JSON.stringify({t:cur, d:d}));
 }
 function buildT(){const g=$('tg'),d=G(),s=SIZES[cardSize];const sc=80/s.pw;const keys=Object.keys(T);$('tmpl-count').textContent=keys.length+' Templates';g.innerHTML=keys.map(k=>{const cl=T[k].cl;return`<div class="tc ${k===cur?'on':''}" data-t="${k}"><div class="tp"><div style="transform:scale(${sc.toFixed(3)});width:${s.pw}px;height:${s.ph}px;transform-origin:top left;">${T[k].f({...d,...cl})}</div></div><div class="tn">${TN[k]}</div></div>`;}).join('');
 g.querySelectorAll('.tc').forEach(c=>{c.addEventListener('click',()=>{cur=c.dataset.t;const cl=T[cur].cl;try{$('c1').value=cl.c1.startsWith('r')?'#ffffff':cl.c1;$('c2').value=cl.c2.startsWith('r')?'#999999':cl.c2;$('c3').value=cl.bg;$('c4').value=cl.ac.startsWith('r')?'#ffffff':cl.ac;}catch(e){}g.querySelectorAll('.tc').forEach(x=>x.classList.remove('on'));c.classList.add('on');up();});});}
@@ -724,6 +726,42 @@ if (!Object.keys(getArc()).length) {
   arc['Divin Gangbo — Classic Black'] = defaultCard;
   setArc(arc);
 }
+
+// Auto-load saved state on page load (autosave first, then last saved card)
+(function(){
+  let s = null;
+  const autosave = localStorage.getItem('mb_autosave');
+  if (autosave) {
+    try { s = JSON.parse(autosave); } catch(e) {}
+  }
+  if (!s) {
+    const arc = getArc();
+    const names = Object.keys(arc);
+    if (names.length) s = arc[names[names.length - 1]];
+  }
+  if (s && s.d) {
+    cur = s.t || cur;
+    const d = s.d;
+    $('in').value = d.n || '';
+    $('iag').value = d.ag || '';
+    $('icat').value = d.cat || '';
+    $('iht').value = d.ht || '';
+    $('ich').value = d.ch || '';
+    $('iwa').value = d.wa || '';
+    $('ihi').value = d.hi || '';
+    $('ish').value = d.sh || '';
+    $('ihr').value = d.hr || '';
+    $('iey').value = d.ey || '';
+    $('ie').value = d.e || '';
+    $('ip').value = d.p || '';
+    $('iig').value = d.ig || '';
+    $('if').value = d.f || "'Montserrat',sans-serif";
+    $('iqrurl').value = d.qrUrl || '';
+    if (d.qrType === 'url') { $('iqr_url').checked = true; } else { $('iqr_vcard').checked = true; }
+    try { $('c1').value = d.c1 || '#fff'; $('c2').value = d.c2 || '#999'; $('c3').value = d.bg || '#111'; $('c4').value = d.ac || '#c9a96e'; } catch(e) {}
+    photos = d.ph || ['','','','',''];
+  }
+})();
 
 // INIT
 renderSlots();showCropFor(0);up();buildT();attachCardClicks();
