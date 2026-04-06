@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.1.9</title>
+<title>ModelBook Studio v0.2.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.1.9</span></div>
+  <div class="logo">MODELBOOK <span>v0.2.1</span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -180,7 +180,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
         <div class="ef" style="display:flex;align-items:center;gap:6px;">
           <label style="margin:0;"><input type="checkbox" id="iqr" onchange="up()" checked style="accent-color:var(--ac);"> Show QR code on front</label>
         </div>
-        <div style="font-size:8px;color:var(--t3);margin-top:2px;">QR contains a vCard — scan to save contact on phone</div>
+        <div class="ef" style="margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="radio" name="qrtype" id="iqr_vcard" value="vcard" checked onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">vCard (save contact to phone)</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;margin-top:2px;"><input type="radio" name="qrtype" id="iqr_url" value="url" onchange="up()" style="accent-color:var(--ac);"><span style="font-size:9px;">Website link</span></label>
+        </div>
+        <div class="ef" id="qr-url-wrap" style="margin-top:3px;display:none;">
+          <label>Website URL</label>
+          <input id="iqrurl" value="" placeholder="https://example.com" oninput="up()">
+        </div>
+        <div style="font-size:8px;color:var(--t3);margin-top:2px;" id="qr-hint">QR contains a vCard — scan to save contact on phone</div>
       </div>
       <div class="es"><div class="es-t">Photos (click to upload)</div>
         <div class="ph-grid">
@@ -272,7 +280,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -297,28 +305,33 @@ let photoZoom=[1,1,1,1,1]; // 1=100%, 0.5=50%, 2=200%
 let photoPosX=[50,50,50,50,50]; // object-position x%
 let photoPosY=[50,50,50,50,50]; // object-position y%
 
-function G(){return{n:$('in').value,ag:$('iag').value,cat:$('icat').value,ht:$('iht').value,ch:$('ich').value,wa:$('iwa').value,hi:$('ihi').value,sh:$('ish').value,hr:$('ihr').value,ey:$('iey').value,e:$('ie').value,p:$('ip').value,ig:$('iig').value,f:$('if').value,c1:$('c1').value,c2:$('c2').value,bg:$('c3').value,ac:$('c4').value,ph:photos,nsz:+$('isz').value,ssz:+$('issz').value,al:$('ial').value,qr:$('iqr').checked};}
+function G(){return{n:$('in').value,ag:$('iag').value,cat:$('icat').value,ht:$('iht').value,ch:$('ich').value,wa:$('iwa').value,hi:$('ihi').value,sh:$('ish').value,hr:$('ihr').value,ey:$('iey').value,e:$('ie').value,p:$('ip').value,ig:$('iig').value,f:$('if').value,c1:$('c1').value,c2:$('c2').value,bg:$('c3').value,ac:$('c4').value,ph:photos,nsz:+$('isz').value,ssz:+$('issz').value,al:$('ial').value,qr:$('iqr').checked,qrType:$('iqr_url').checked?'url':'vcard',qrUrl:$('iqrurl').value};}
 
 function makeQR(d) {
-  const names = d.n.split(' ');
-  const last = names.length > 1 ? names.pop() : '';
-  const first = names.join(' ');
-  const NL = String.fromCharCode(10);
-  const vcard = 'BEGIN:VCARD' + NL +
-    'VERSION:3.0' + NL +
-    'N:' + last + ';' + first + ';;;' + NL +
-    'FN:' + d.n + NL +
-    (d.ag ? 'ORG:' + d.ag + NL : '') +
-    (d.cat ? 'TITLE:' + d.cat + NL : '') +
-    (d.e ? 'EMAIL:' + d.e + NL : '') +
-    (d.p ? 'TEL:' + d.p + NL : '') +
-    (d.ig ? 'URL:https://instagram.com/' + d.ig.replace('@','') + NL : '') +
-    (d.ht ? 'NOTE:Height: ' + d.ht + ' | Chest: ' + d.ch + ' | Waist: ' + d.wa + ' | Hips: ' + d.hi + ' | Shoe: ' + d.sh + NL : '') +
-    'END:VCARD';
-
+  let data = '';
+  if (d.qrType === 'url' && d.qrUrl) {
+    data = d.qrUrl;
+  } else {
+    const names = d.n.split(' ');
+    const last = names.length > 1 ? names.pop() : '';
+    const first = names.join(' ');
+    const NL = String.fromCharCode(10);
+    data = 'BEGIN:VCARD' + NL +
+      'VERSION:3.0' + NL +
+      'N:' + last + ';' + first + ';;;' + NL +
+      'FN:' + d.n + NL +
+      (d.ag ? 'ORG:' + d.ag + NL : '') +
+      (d.cat ? 'TITLE:' + d.cat + NL : '') +
+      (d.e ? 'EMAIL:' + d.e + NL : '') +
+      (d.p ? 'TEL:' + d.p + NL : '') +
+      (d.ig ? 'URL:https://instagram.com/' + d.ig.replace('@','') + NL : '') +
+      (d.ht ? 'NOTE:Height: ' + d.ht + ' | Chest: ' + d.ch + ' | Waist: ' + d.wa + ' | Hips: ' + d.hi + ' | Shoe: ' + d.sh + NL : '') +
+      'END:VCARD';
+  }
+  if (!data) return '';
   try {
     const qr = qrcode(0, 'H');
-    qr.addData(vcard);
+    qr.addData(data);
     qr.make();
     return qr.createDataURL(16, 2);
   } catch(e) {
@@ -494,11 +507,16 @@ function changeSize(){
 
 function up(){
   const d=G();
+  // Show/hide URL field based on QR type
+  const isUrl = d.qrType === 'url';
+  $('qr-url-wrap').style.display = isUrl ? '' : 'none';
+  $('qr-hint').textContent = isUrl ? 'QR links to your website' : 'QR contains a vCard — scan to save contact on phone';
   // Inject QR into data so templates can use it
   d._qrHtml = '';
   if(d.qr){
     const qrSrc=makeQR(d);
-    if(qrSrc) d._qrHtml='<div style="margin-top:6px;display:flex;align-items:center;gap:5px;"><img src="'+qrSrc+'" style="width:50px;height:50px;border-radius:3px;background:#fff;padding:2px;"><div style="font-size:5px;color:inherit;opacity:.6;line-height:1.3;">Scan to<br>save contact</div></div>';
+    const label = isUrl ? 'Scan to<br>visit site' : 'Scan to<br>save contact';
+    if(qrSrc) d._qrHtml='<div style="margin-top:6px;display:flex;align-items:center;gap:5px;"><img src="'+qrSrc+'" style="width:50px;height:50px;border-radius:3px;background:#fff;padding:2px;"><div style="font-size:5px;color:inherit;opacity:.6;line-height:1.3;">'+label+'</div></div>';
   }
   $('cf').innerHTML=T[cur].f(d);
   $('cb').innerHTML=T[cur].b(d);
@@ -587,7 +605,7 @@ function getArc(){return JSON.parse(localStorage.getItem('mb_arc')||'{}');}
 function setArc(a){localStorage.setItem('mb_arc',JSON.stringify(a));}
 function saveD(){const name=$('sn').value.trim()||('Card '+new Date().toLocaleDateString());const a=getArc();a[name]={t:cur,d:G(),date:new Date().toLocaleDateString()};setArc(a);$('sn').value='';renderArc();}
 function saveFromDesigner(){const name=$('dsn').value.trim()||('Card '+new Date().toLocaleDateString());const a=getArc();a[name]={t:cur,d:G(),date:new Date().toLocaleDateString()};setArc(a);$('dsn').value='';renderArc();alert('Card saved as "'+name+'"!');}
-function loadD(n){const s=getArc()[n];if(!s)return;cur=s.t;const d=s.d;$('in').value=d.n||'';$('iag').value=d.ag||'';$('icat').value=d.cat||'';$('iht').value=d.ht||'';$('ich').value=d.ch||'';$('iwa').value=d.wa||'';$('ihi').value=d.hi||'';$('ish').value=d.sh||'';$('ihr').value=d.hr||'';$('iey').value=d.ey||'';$('ie').value=d.e||'';$('ip').value=d.p||'';$('iig').value=d.ig||'';$('if').value=d.f||"'Montserrat',sans-serif";try{$('c1').value=d.c1||'#fff';$('c2').value=d.c2||'#999';$('c3').value=d.bg||'#111';$('c4').value=d.ac||'#c9a96e';}catch(e){}photos=d.ph||['','','','',''];renderSlots();up();buildT();document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));$('s-designer').classList.add('on');document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('on');if(t.textContent==='Designer')t.classList.add('on');});}
+function loadD(n){const s=getArc()[n];if(!s)return;cur=s.t;const d=s.d;$('in').value=d.n||'';$('iag').value=d.ag||'';$('icat').value=d.cat||'';$('iht').value=d.ht||'';$('ich').value=d.ch||'';$('iwa').value=d.wa||'';$('ihi').value=d.hi||'';$('ish').value=d.sh||'';$('ihr').value=d.hr||'';$('iey').value=d.ey||'';$('ie').value=d.e||'';$('ip').value=d.p||'';$('iig').value=d.ig||'';$('if').value=d.f||"'Montserrat',sans-serif";$('iqrurl').value=d.qrUrl||'';if(d.qrType==='url'){$('iqr_url').checked=true;}else{$('iqr_vcard').checked=true;}try{$('c1').value=d.c1||'#fff';$('c2').value=d.c2||'#999';$('c3').value=d.bg||'#111';$('c4').value=d.ac||'#c9a96e';}catch(e){}photos=d.ph||['','','','',''];renderSlots();up();buildT();document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));$('s-designer').classList.add('on');document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('on');if(t.textContent==='Designer')t.classList.add('on');});}
 function delD(n){const a=getArc();delete a[n];setArc(a);renderArc();}
 function renderArc(){const a=getArc(),el=$('arc-grid'),ns=Object.keys(a);if(!ns.length){el.innerHTML='<div class="empty"><p>No saved cards. Save one from the Designer.</p></div>';return;}el.innerHTML=ns.map(n=>{const s=a[n];return`<div class="arc-card"><div class="arc-thumb"><div style="transform:scale(.18);width:320px;height:490px;transform-origin:top left;">${T[s.t]?T[s.t].f({...s.d,...(T[s.t].cl)}):'?'}</div></div><div class="arc-info"><div class="arc-name">${n}</div><div class="arc-date">${s.date||''}</div><div class="arc-btns"><button class="arc-btn lo" onclick="loadD('${n.replace(/'/g,"\\'")}')">Open</button><button class="arc-btn de" onclick="delD('${n.replace(/'/g,"\\'")}')">Delete</button></div></div></div>`;}).join('');}
 
@@ -693,6 +711,18 @@ function attachCardClicks(){
     goToLib(idx+1); // back card slots are 1-4
   };
   $('cb').style.cursor='pointer';
+}
+
+// Seed default card on first visit
+if (!Object.keys(getArc()).length) {
+  const defaultCard = {
+    t: 't1',
+    d: {n:"DIVIN GANGBO",ag:"ELITE TOP MODEL AGENCY",cat:"COMMERCIAL / PRINT / RUNWAY",ht:"187 cm / 6'2",ch:"105 cm",wa:"86 cm",hi:"95 cm",sh:"44 EU / 10 US / 9.5 UK",hr:"Black",ey:"Brown",e:"divingangbo@yahoo.fr",p:"+33 6 XX XX XX XX",ig:"@Dnice_baby",f:"'Montserrat',sans-serif",c1:"#ffffff",c2:"#999999",bg:"#111111",ac:"#c9a96e",ph:["","","","",""],nsz:18,ssz:7,al:"left",qr:true},
+    date: new Date().toLocaleDateString()
+  };
+  const arc = {};
+  arc['Divin Gangbo — Classic Black'] = defaultCard;
+  setArc(arc);
 }
 
 // INIT
