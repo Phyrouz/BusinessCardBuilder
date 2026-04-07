@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.2.3</title>
+<title>ModelBook Studio v0.2.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.2.3</span></div>
+  <div class="logo">MODELBOOK <span>v0.2.4</span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -173,7 +173,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
       </div>
       <div class="es"><div class="es-t">Contact</div>
         <div class="ef"><label>Email</label><input id="ie" value="divingangbo@yahoo.fr" oninput="up()"></div>
-        <div class="ef"><label>WhatsApp</label><input id="ip" value="+33 6 XX XX XX XX" oninput="up()"></div>
+        <div class="ef"><label>W.A.</label><input id="ip" value="+33 6 XX XX XX XX" oninput="up()"></div>
         <div class="ef"><label>Instagram</label><input id="iig" value="@Dnice_baby" oninput="up()"></div>
       </div>
       <div class="es"><div class="es-t">QR Code</div>
@@ -280,7 +280,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.3</strong> — Auto-save: all designer edits persist on reload, no more lost data<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.4</strong> — Auto-save: all designer edits persist on reload, no more lost data<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -353,7 +353,7 @@ function phImg(i,w,h,fit,r='0'){const p=photos[i],f=fit||photoFit[i]||'cover';
   if(p)return`<div style="width:${w};height:${h};overflow:hidden;border-radius:${r};background:#111;"><img src="${p}" style="width:100%;height:100%;object-fit:${f};${posStyle}${scaleStyle}display:block;"></div>`;
   return`<div style="width:${w};height:${h};background:#222;display:flex;align-items:center;justify-content:center;border-radius:${r};"><span style="font-size:8px;color:#444;">+</span></div>`;}
 function stats(d,sz,c,lc){const s=d.ssz||sz;return`<div style="font-size:${s}px;color:${c};line-height:1.7;"><div><span style="color:${lc};">Height:</span> ${d.ht}</div><div><span style="color:${lc};">Chest:</span> ${d.ch}</div><div><span style="color:${lc};">Waist:</span> ${d.wa}</div><div><span style="color:${lc};">Hips:</span> ${d.hi}</div><div><span style="color:${lc};">Shoe:</span> ${d.sh}</div></div>`;}
-function contact(d,sz,c){const s=d.ssz||sz;const p=[];if(d.ig)p.push('IG: '+d.ig);if(d.e)p.push(d.e);if(d.p)p.push('WhatsApp: '+d.p);return`<div style="font-size:${s}px;color:${c};line-height:1.5;">${p.join('<br>')}</div>${d._qrHtml||''}`;}
+function contact(d,sz,c){const s=d.ssz||sz;const p=[];if(d.ig)p.push('IG: '+d.ig);if(d.e)p.push(d.e);if(d.p)p.push('W.A. '+d.p);return`<div style="font-size:${s}px;color:${c};line-height:1.5;">${p.join('<br>')}</div>${d._qrHtml||''}`;}
 function stdF(d,pw){const ns=d.nsz||17;return`<div style="font-family:${d.f};background:${d.bg};width:100%;height:100%;display:flex;text-align:${d.al||'left'};"><div style="width:${pw};">${phImg(0,'100%','100%')}</div><div style="flex:1;padding:16px;display:flex;flex-direction:column;justify-content:center;"><div style="font-size:${ns}px;font-weight:800;color:${d.c1};letter-spacing:1px;">${d.n}</div><div style="font-size:${Math.max(5,ns*.35)}px;color:${d.ac};margin-top:3px;letter-spacing:2px;">${d.cat}</div><div style="width:18px;height:1px;background:${d.ac};margin:7px 0;"></div>${stats(d,7,d.c1,d.c2)}<div style="margin-top:auto;">${contact(d,6,d.c2)}</div></div></div>`;}
 function backG(d){return`<div style="font-family:${d.f};background:${d.bg};width:100%;height:100%;padding:5px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;">${phImg(1,'100%','100%','cover','3px')}${phImg(2,'100%','100%','cover','3px')}${phImg(3,'100%','100%','cover','3px')}${phImg(4,'100%','100%','cover','3px')}</div>`;}
 function backS(d){return`<div style="font-family:${d.f};background:${d.bg};width:100%;height:100%;display:flex;flex-direction:column;"><div style="flex:1;display:flex;gap:2px;">${phImg(1,'50%','100%')}${phImg(2,'50%','100%')}</div><div style="flex:1;display:flex;gap:2px;">${phImg(3,'50%','100%')}${phImg(4,'50%','100%')}</div></div>`;}
