@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.2.6</title>
+<title>ModelBook Studio v0.3.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.2.6</span></div>
+  <div class="logo">MODELBOOK <span>v0.3.0</span> <span id="mb-sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-left:4px;vertical-align:middle;cursor:help;" title="Sync status"></span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -287,6 +287,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
       <input type="file" id="mb-import-file" accept=".json" style="display:none;" onchange="mbImportAll(this)">
     </div>
     <div id="mb-backup-status" style="font-size:11px;color:var(--t2);margin-top:8px;"></div>
+    <div class="hcard">
+      <h3>Server Sync</h3>
+      <p>Data syncs automatically to the server. All changes are saved in real-time and available from any browser. The dot next to the logo shows sync status (green = connected, red = offline).</p>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-gold" onclick="mbSyncPull()">Pull from Server</button>
+        <button class="btn btn-gold" onclick="mbSyncPush()">Push to Server</button>
+      </div>
+      <div id="mb-server-status" style="font-size:11px;color:var(--t2);margin-top:6px;"></div>
+    </div>
   </div>
 </div>
 
@@ -300,7 +309,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.2.6</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.3.0</strong> — Server sync: data syncs to Render.com automatically, available from any browser/computer. Push/Pull buttons. Sync status dot.<br><strong>v0.3.0</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -308,6 +317,108 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <script>
 const $=id=>document.getElementById(id);
+
+// ===== SERVER SYNC LAYER =====
+const MB_API = 'https://silver-dollop-4zjb.onrender.com/api/modelbook';
+const MB_KEYS = ['mb_lib', 'mb_arc', 'mb_autosave'];
+let _mbSyncTimer = null;
+let _mbSyncReady = false;
+
+function _mbGetAllData() {
+  const data = {};
+  MB_KEYS.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v) data[k] = v;
+  });
+  return data;
+}
+
+function _mbSyncToServer() {
+  if (!MB_API || !_mbSyncReady) return;
+  clearTimeout(_mbSyncTimer);
+  _mbSyncTimer = setTimeout(async () => {
+    try {
+      const data = _mbGetAllData();
+      const resp = await fetch(MB_API + '/data', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (resp.ok) {
+        const dot = $('mb-sync-dot');
+        if (dot) { dot.style.background = '#2d7a3a'; dot.title = 'Synced ' + new Date().toLocaleTimeString(); }
+      }
+    } catch (e) {
+      console.log('Sync push failed:', e.message);
+      const dot = $('mb-sync-dot');
+      if (dot) { dot.style.background = '#c0392b'; dot.title = 'Offline'; }
+    }
+  }, 2000);
+}
+
+async function _mbSyncFromServer() {
+  if (!MB_API) { _mbSyncReady = true; return; }
+  try {
+    const resp = await fetch(MB_API + '/data', { signal: AbortSignal.timeout(5000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const keys = Object.keys(data);
+    if (keys.length > 0) {
+      keys.forEach(k => localStorage.setItem(k, data[k]));
+      console.log('ModelBook: synced ' + keys.length + ' keys from server.');
+    }
+    const dot = $('mb-sync-dot');
+    if (dot) { dot.style.background = '#2d7a3a'; dot.title = 'Connected'; }
+  } catch (e) {
+    console.log('Server unavailable, using local data:', e.message);
+    const dot = $('mb-sync-dot');
+    if (dot) { dot.style.background = '#c0392b'; dot.title = 'Offline'; }
+  }
+  _mbSyncReady = true;
+}
+
+// Hook localStorage.setItem to auto-sync modelbook keys
+const _mbOrigSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key, value) {
+  _mbOrigSetItem.call(this, key, value);
+  if (this === localStorage && MB_KEYS.includes(key)) _mbSyncToServer();
+};
+
+// Manual push/pull
+async function mbSyncPush() {
+  const st = $('mb-server-status');
+  if (st) st.textContent = 'Pushing...';
+  try {
+    const data = _mbGetAllData();
+    const resp = await fetch(MB_API + '/data', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    if (st) st.textContent = 'Pushed at ' + new Date().toLocaleTimeString();
+    const dot = $('mb-sync-dot');
+    if (dot) { dot.style.background = '#2d7a3a'; dot.title = 'Synced'; }
+  } catch (e) {
+    if (st) st.textContent = 'Push failed: ' + e.message;
+  }
+}
+
+async function mbSyncPull() {
+  const st = $('mb-server-status');
+  if (st) st.textContent = 'Pulling...';
+  try {
+    const resp = await fetch(MB_API + '/data', { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const keys = Object.keys(data);
+    if (keys.length > 0) {
+      keys.forEach(k => localStorage.setItem(k, data[k]));
+    }
+    if (st) st.textContent = 'Pulled ' + keys.length + ' keys. Reloading...';
+    setTimeout(() => location.reload(), 800);
+  } catch (e) {
+    if (st) st.textContent = 'Pull failed: ' + e.message;
+  }
+}
 
 // TABS
 function showTab(id){
@@ -792,8 +903,8 @@ if (!Object.keys(getArc()).length) {
   setArc(arc);
 }
 
-// Auto-load saved state on page load (autosave first, then last saved card)
-(function(){
+// Auto-load saved state
+function _mbRestoreState() {
   let s = null;
   const autosave = localStorage.getItem('mb_autosave');
   if (autosave) {
@@ -826,10 +937,14 @@ if (!Object.keys(getArc()).length) {
     try { $('c1').value = d.c1 || '#fff'; $('c2').value = d.c2 || '#999'; $('c3').value = d.bg || '#111'; $('c4').value = d.ac || '#c9a96e'; } catch(e) {}
     photos = d.ph || ['','','','',''];
   }
-})();
+}
 
-// INIT
-renderSlots();showCropFor(0);up();buildT();attachCardClicks();
+// BOOT: sync from server first, then restore state and render
+(async function boot() {
+  await _mbSyncFromServer();
+  _mbRestoreState();
+  renderSlots();showCropFor(0);up();buildT();attachCardClicks();
+})();
 </script>
 </body>
 </html>
