@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.3.0</title>
+<title>ModelBook Studio v0.3.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.3.0</span> <span id="mb-sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-left:4px;vertical-align:middle;cursor:help;" title="Sync status"></span></div>
+  <div class="logo">MODELBOOK <span>v0.3.1</span> <span id="mb-sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-left:4px;vertical-align:middle;cursor:help;" title="Sync status"></span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -309,7 +309,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.3.0</strong> — Server sync: data syncs to Render.com automatically, available from any browser/computer. Push/Pull buttons. Sync status dot.<br><strong>v0.3.0</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.3.1</strong> — Fixed QR code not showing in exported PDF/image downloads<br><strong>v0.3.0</strong> — Server sync: data syncs to Render.com automatically, available from any browser/computer. Push/Pull buttons. Sync status dot.<br><strong>v0.3.1</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -795,11 +795,20 @@ async function renderHiRes(side){
   d.nsz=Math.round((d.nsz||18)*scale);
   d.ssz=Math.round((d.ssz||7)*scale);
   const el=document.createElement('div');
-  el.style.cssText='width:'+s.prW+'px;height:'+s.prH+'px;position:fixed;left:0;top:0;z-index:-1;overflow:hidden;';
+  // Position off-screen but visible (not z-index:-1) so html2canvas captures all content including QR
+  el.style.cssText='width:'+s.prW+'px;height:'+s.prH+'px;position:fixed;left:-9999px;top:0;overflow:hidden;';
   el.innerHTML=side==='front'?T[cur].f(d):T[cur].b(d);
   document.body.appendChild(el);
-  await new Promise(r=>setTimeout(r,600));
-  const canvas=await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:null});
+  // Wait for all images (including QR data URLs) to fully load
+  const imgs = el.querySelectorAll('img');
+  await Promise.all(Array.from(imgs).map(function(img){
+    return new Promise(function(resolve){
+      if(img.complete) resolve();
+      else { img.onload=resolve; img.onerror=resolve; }
+    });
+  }));
+  await new Promise(r=>setTimeout(r,200));
+  const canvas=await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false});
   document.body.removeChild(el);
   return canvas;
 }
