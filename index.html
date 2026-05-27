@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelBook Studio v0.3.1</title>
+<title>ModelBook Studio v0.3.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
@@ -135,7 +135,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">MODELBOOK <span>v0.3.1</span> <span id="mb-sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-left:4px;vertical-align:middle;cursor:help;" title="Sync status"></span></div>
+  <div class="logo">MODELBOOK <span>v0.3.2</span> <span id="mb-sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-left:4px;vertical-align:middle;cursor:help;" title="Sync status"></span></div>
   <div class="tabs">
     <div class="tab on" onclick="showTab('designer')">Designer</div>
     <div class="tab" onclick="showTab('photos')">Photo Library</div>
@@ -309,7 +309,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
     <div class="hcard"><h3>My Cards</h3><p>Save designs by name. Click <strong>Open</strong> to reload, <strong>Delete</strong> to remove. Designs persist in your browser.</p></div>
     <div class="hcard"><h3>Export</h3><p>Exports a print-ready PDF at 8.5 x 5.5 inches (standard comp card). Front and back on separate pages.</p></div>
     <div class="hcard"><h3>FAQ</h3><p><strong>Q: What size?</strong> 8.5 x 5.5 in (half letter).<br><strong>Q: How many photos?</strong> 5 ideal: headshot, full body, 3 poses.<br><strong>Q: Offline?</strong> Yes, standalone HTML file.<br><strong>Q: My photos safe?</strong> Stored in browser localStorage.</p></div>
-    <div class="hcard"><h3>Versions</h3><p><strong>v0.3.1</strong> — Fixed QR code not showing in exported PDF/image downloads<br><strong>v0.3.0</strong> — Server sync: data syncs to Render.com automatically, available from any browser/computer. Push/Pull buttons. Sync status dot.<br><strong>v0.3.1</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
+    <div class="hcard"><h3>Versions</h3><p><strong>v0.3.2</strong> — Cloudinary image storage: photos stored permanently, never disappear on Render restart. Fixed QR code not showing in exported PDF/image downloads<br><strong>v0.3.0</strong> — Server sync: data syncs to Render.com automatically, available from any browser/computer. Push/Pull buttons. Sync status dot.<br><strong>v0.3.2</strong> — Import/Export tab: backup and restore all data from its own tab<br><strong>v0.2.5</strong> — Export/Import buttons added to My Cards<br><strong>v0.2.4</strong> — W.A. label, auto-save: all designer edits persist on reload<br><strong>v0.2.2</strong> — QR radio buttons aligned horizontally<br><strong>v0.2.1</strong> — QR code options: choose between vCard (save contact) or website link<br><strong>v0.2.0</strong> — Default card for Divin Gangbo pre-saved in My Cards on first visit<br><strong>v0.1.9</strong> — Save Card button added to Designer panel<br><strong>v0.1.8</strong> — Fixed text too small in PDF/image exports by scaling font sizes proportionally for hi-res render<br><strong>v0.1.7</strong> — Replaced Phone with WhatsApp field in Designer and card display<br><strong>v0.1.6</strong> — Rebuilt GUI with top tabs, Photo Library, My Cards, Help, 50 templates<br><strong>v0.1.1</strong> — 3-section layout, help section<br><strong>v0.0.6</strong> — 50 comp card templates<br><strong>v0.0.1</strong> — Initial release</p></div>
   </div>
 </div>
 
@@ -317,6 +317,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t);height:1
 
 <script>
 const $=id=>document.getElementById(id);
+
+// ===== CLOUDINARY CONFIG =====
+const CL_CLOUD = 'dtbzxl2iw';
+const CL_PRESET = 'smxdbdh2';
+const CL_URL = 'https://api.cloudinary.com/v1_1/' + CL_CLOUD + '/image/upload';
+
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CL_PRESET);
+  const r = await fetch(CL_URL, {method:'POST', body:fd});
+  const data = await r.json();
+  if (!data.secure_url) throw new Error('Cloudinary upload failed');
+  return data.secure_url;
+}
 
 // ===== SERVER SYNC LAYER =====
 const MB_API = 'https://silver-dollop-4zjb.onrender.com/api/modelbook';
@@ -671,7 +686,7 @@ function renderSlots(){
   });
 }
 function pickPh(i){pendSlot=i;$('pf').click();}
-$('pf').addEventListener('change',function(e){const f=e.target.files[0];if(!f||pendSlot<0)return;const r=new FileReader();r.onload=ev=>{photos[pendSlot]=ev.target.result;renderSlots();up();buildT();pendSlot=-1;};r.readAsDataURL(f);this.value='';});
+$('pf').addEventListener('change',function(e){const f=e.target.files[0];if(!f||pendSlot<0)return;this.value='';uploadToCloudinary(f).then(function(url){photos[pendSlot]=url;renderSlots();up();buildT();pendSlot=-1;}).catch(function(err){alert('Upload failed: '+err.message);pendSlot=-1;});});
 function clrPh(i){photos[i]='';photoFit[i]='cover';photoZoom[i]=1;photoPosX[i]=50;photoPosY[i]=50;renderSlots();showCropFor(i);up();buildT();}
 function togFit(i){photoFit[i]=photoFit[i]==='cover'?'contain':'cover';renderSlots();showCropFor(i);up();buildT();}
 function setZoom(i,v){photoZoom[i]=v;up();}
@@ -706,20 +721,19 @@ function showCropFor(i){
 // PHOTO LIBRARY
 function getLib(){return JSON.parse(localStorage.getItem('mb_lib')||'[]');}
 function setLib(l){localStorage.setItem('mb_lib',JSON.stringify(l));}
-$('lib-up').addEventListener('change',function(e){const files=[...e.target.files];let count=0;
-  files.forEach(f=>{const r=new FileReader();r.onload=ev=>{
-    const lib=getLib();lib.push({data:ev.target.result,name:f.name});setLib(lib);
-    count++;
-    if(count===files.length){
-      // Auto-assign last uploaded to target slot and go to designer
-      photos[targetSlot]=ev.target.result;
+$('lib-up').addEventListener('change',function(e){const files=[...e.target.files];let done=0;this.value='';
+  files.forEach(function(f){uploadToCloudinary(f).then(function(url){
+    const lib=getLib();lib.push({data:url,name:f.name});setLib(lib);
+    done++;
+    if(done===files.length){
+      photos[targetSlot]=url;
       renderSlots();up();buildT();
       document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
       $('s-designer').classList.add('on');
       document.querySelectorAll('.tab').forEach(t=>{t.classList.remove('on');if(t.textContent==='Designer')t.classList.add('on');});
       attachCardClicks();
     } else { renderLib(); }
-  };r.readAsDataURL(f);});this.value='';});
+  }).catch(function(err){alert('Upload failed: '+err.message);});});});
 function renderLib(){const lib=getLib(),el=$('lib-grid');
   const labels=['Main headshot','Full body','Pose 2','Pose 3','Pose 4'];
   const hint=`<div style="grid-column:1/-1;padding:8px 12px;background:var(--ac);color:#fff;border-radius:6px;font-size:11px;font-weight:600;text-align:center;">Select a photo for: ${labels[targetSlot]||'Photo '+(targetSlot+1)}</div>`;
